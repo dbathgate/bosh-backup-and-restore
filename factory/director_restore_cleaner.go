@@ -13,7 +13,8 @@ func BuildDirectorRestoreCleaner(host,
 	username,
 	privateKeyPath,
 	bbrVersion string,
-	hasDebug bool) *orchestrator.RestoreCleaner {
+	hasDebug bool,
+	maxConnectionsPerMinute int) *orchestrator.RestoreCleaner {
 
 	logger := BuildLogger(hasDebug)
 
@@ -23,6 +24,7 @@ func BuildDirectorRestoreCleaner(host,
 		privateKeyPath,
 		instance.NewJobFinderOmitMetadataReleases(bbrVersion, logger),
 		ssh.NewSshRemoteRunner,
+		maxConnectionsPerMinute,
 	)
 
 	return orchestrator.NewRestoreCleaner(logger, deploymentManager, orderer.NewKahnRestoreLockOrderer(), executor.NewSerialExecutor())

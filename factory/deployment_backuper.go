@@ -20,10 +20,11 @@ func BuildDeploymentBackuper(
 	unsafeLockFree bool,
 	bbrVersion string,
 	maxInFlightThreads int,
+	maxConnectionsPerMinute int,
 	logger boshlog.Logger,
 	timestamp string,
 ) (*orchestrator.Backuper, error) {
-	boshClient, err := BuildBoshClient(target, username, password, caCert, bbrVersion, logger)
+	boshClient, err := BuildBoshClient(target, username, password, caCert, bbrVersion, maxConnectionsPerMinute, logger)
 	if err != nil {
 		return nil, err
 	}

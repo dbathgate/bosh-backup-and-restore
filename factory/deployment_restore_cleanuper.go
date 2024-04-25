@@ -13,7 +13,8 @@ func BuildDeploymentRestoreCleanuper(target,
 	caCert,
 	bbrVersion string,
 	withManifest,
-	isDebug bool) (*orchestrator.RestoreCleaner, error) {
+	isDebug bool,
+	maxConnectionsPerMinute int) (*orchestrator.RestoreCleaner, error) {
 
 	logger := BuildLogger(isDebug)
 
@@ -23,6 +24,7 @@ func BuildDeploymentRestoreCleanuper(target,
 		password,
 		caCert,
 		bbrVersion,
+		maxConnectionsPerMinute,
 		logger,
 	)
 

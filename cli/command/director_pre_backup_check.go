@@ -32,6 +32,7 @@ func (checkCommand DirectorPreBackupCheckCommand) Action(c *cli.Context) error {
 		c.Parent().String("private-key-path"),
 		c.App.Version,
 		c.GlobalBool("debug"),
+		c.Parent().Int("max-connections-per-minute"),
 	)
 
 	err := backupChecker.Check(directorName)

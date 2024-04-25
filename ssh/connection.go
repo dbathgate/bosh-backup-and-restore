@@ -40,17 +40,17 @@ type Logger interface {
 var dialFunc boshhttp.DialContextFunc
 var dialFuncMutex sync.RWMutex
 
-func NewConnection(hostName, userName, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, logger Logger) (SSHConnection, error) {
-	return NewConnectionWithServerAliveInterval(hostName, userName, privateKey, publicKeyCallback, publicKeyAlgorithm, 60, logger)
+func NewConnection(hostName, userName, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, maxConnectionsPerMinute int, logger Logger) (SSHConnection, error) {
+	return NewConnectionWithServerAliveInterval(hostName, userName, privateKey, publicKeyCallback, publicKeyAlgorithm, 60, maxConnectionsPerMinute, logger)
 }
 
-func NewConnectionWithServerAliveInterval(hostName, userName, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, serverAliveInterval time.Duration, logger Logger) (SSHConnection, error) {
+func NewConnectionWithServerAliveInterval(hostName, userName, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, serverAliveInterval time.Duration, maxConnectionsPerMinute int, logger Logger) (SSHConnection, error) {
 	parsedPrivateKey, err := ssh.ParsePrivateKey([]byte(privateKey))
 	if err != nil {
 		return nil, errors.Wrap(err, "ssh.NewConnection.ParsePrivateKey failed")
 	}
 
-	conn := Connection{
+	conn := &Connection{
 		host: defaultToSSHPort(hostName),
 		sshConfig: &ssh.ClientConfig{
 			User: userName,
@@ -60,23 +60,27 @@ func NewConnectionWithServerAliveInterval(hostName, userName, privateKey string,
 			HostKeyCallback:   publicKeyCallback,
 			HostKeyAlgorithms: publicKeyAlgorithm,
 		},
-		logger:              logger,
-		serverAliveInterval: serverAliveInterval,
-		dialFunc:            createDialContextFunc(),
+		logger:                  logger,
+		serverAliveInterval:     serverAliveInterval,
+		dialFunc:                createDialContextFunc(),
+		maxConnectionsPerMinute: maxConnectionsPerMinute,
 	}
 
 	return conn, nil
 }
 
 type Connection struct {
-	host                string
-	sshConfig           *ssh.ClientConfig
-	logger              Logger
-	serverAliveInterval time.Duration
-	dialFunc            boshhttp.DialContextFunc
+	host                    string
+	sshConfig               *ssh.ClientConfig
+	logger                  Logger
+	serverAliveInterval     time.Duration
+	dialFunc                boshhttp.DialContextFunc
+	maxConnectionsPerMinute int
+	connectionCount         int
+	connectionTimer         *time.Timer
 }
 
-func (c Connection) Run(cmd string) (stdout, stderr []byte, exitCode int, err error) {
+func (c *Connection) Run(cmd string) (stdout, stderr []byte, exitCode int, err error) {
 	stdoutBuffer := bytes.NewBuffer([]byte{})
 
 	stderr, exitCode, err = c.Stream(cmd, stdoutBuffer)
@@ -84,7 +88,7 @@ func (c Connection) Run(cmd string) (stdout, stderr []byte, exitCode int, err er
 	return stdoutBuffer.Bytes(), stderr, exitCode, errors.Wrap(err, "ssh.Run failed")
 }
 
-func (c Connection) Stream(cmd string, stdoutWriter io.Writer) (stderr []byte, exitCode int, err error) {
+func (c *Connection) Stream(cmd string, stdoutWriter io.Writer) (stderr []byte, exitCode int, err error) {
 	errBuffer := bytes.NewBuffer([]byte{})
 
 	exitCode, err = c.runInSession(cmd, stdoutWriter, errBuffer, nil)
@@ -92,7 +96,7 @@ func (c Connection) Stream(cmd string, stdoutWriter io.Writer) (stderr []byte, e
 	return errBuffer.Bytes(), exitCode, errors.Wrap(err, "ssh.Stream failed")
 }
 
-func (c Connection) StreamStdin(cmd string, stdinReader io.Reader) (stdout, stderr []byte, exitCode int, err error) {
+func (c *Connection) StreamStdin(cmd string, stdinReader io.Reader) (stdout, stderr []byte, exitCode int, err error) {
 	stdoutBuffer := bytes.NewBuffer([]byte{})
 	stderrBuffer := bytes.NewBuffer([]byte{})
 
@@ -116,7 +120,11 @@ func (w *sessionClosingOnErrorWriter) Write(data []byte) (int, error) {
 	return n, err
 }
 
-func (c Connection) newClient() (*ssh.Client, error) {
+func (c *Connection) newClient() (*ssh.Client, error) {
+	if c.maxConnectionsPerMinute != -1 {
+		c.throttleSshConnections()
+	}
+
 	conn, err := c.dialFunc(context.Background(), "tcp", c.host)
 	if err != nil {
 		return nil, err
@@ -128,6 +136,21 @@ func (c Connection) newClient() (*ssh.Client, error) {
 	}
 
 	return ssh.NewClient(client, chans, reqs), nil
+}
+
+func (c *Connection) throttleSshConnections() {
+	if c.connectionTimer == nil {
+		c.connectionTimer = time.NewTimer(1 * time.Minute)
+	}
+
+	if c.connectionCount >= c.maxConnectionsPerMinute {
+		c.logger.Debug("Connection attempts exceeded %s on host [%s]", string(c.maxConnectionsPerMinute), c.host)
+		<-c.connectionTimer.C
+		c.connectionTimer = nil
+		c.connectionCount = 0
+	}
+
+	c.connectionCount = c.connectionCount + 1
 }
 
 func createDialContextFunc() boshhttp.DialContextFunc {
@@ -171,7 +194,7 @@ func buildSSHSessionImpl(client *ssh.Client, stdin io.Reader, stdout, stderr io.
 
 var buildSSHSession = buildSSHSessionImpl
 
-func (c Connection) runInSession(cmd string, stdout, stderr io.Writer, stdin io.Reader) (int, error) {
+func (c *Connection) runInSession(cmd string, stdout, stderr io.Writer, stdin io.Reader) (int, error) {
 	client, err := c.newClient()
 	if err != nil {
 		return -1, errors.Wrap(err, "ssh.Dial failed")

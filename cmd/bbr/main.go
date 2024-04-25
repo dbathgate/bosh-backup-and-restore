@@ -148,6 +148,11 @@ func availableDeploymentFlags() []cli.Flag {
 			Usage: "Set the maximum amount of parallel threads",
 			Value: 10,
 		},
+		cli.IntFlag{
+			Name:  "max-connections-per-minute",
+			Usage: "Set the maximum amount of ssh connections that can be opened in a 1 minute window (Set to -1 to disable connection throttling)",
+			Value: -1,
+		},
 	}
 }
 
@@ -176,6 +181,11 @@ func availableDirectorFlags() []cli.Flag {
 			Name:  "max-in-flight-threads",
 			Usage: "Set the maximum amount of parallel threads",
 			Value: 10,
+		},
+		cli.IntFlag{
+			Name:  "max-connections-per-minute",
+			Usage: "Set the maximum amount of ssh connections that can be opened in a 1 minute window (Set to -1 to disable connection throttling)",
+			Value: -1,
 		},
 	}
 }

@@ -30,6 +30,7 @@ func (d DirectorBackupCleanupCommand) Action(c *cli.Context) error {
 		c.App.Version,
 		c.GlobalBool("debug"),
 		c.Parent().Int("max-in-flight-threads"),
+		c.Parent().Int("max-connections-per-minute"),
 	)
 
 	cleanupErr := cleaner.Cleanup(directorName)

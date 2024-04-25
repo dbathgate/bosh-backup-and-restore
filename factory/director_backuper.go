@@ -12,7 +12,7 @@ import (
 	"github.com/cloudfoundry-incubator/bosh-backup-and-restore/standalone"
 )
 
-func BuildDirectorBackuper(host, username, privateKeyPath, bbrVersion string, hasDebug bool, maxInFlightThreads int, timeStamp string) *orchestrator.Backuper {
+func BuildDirectorBackuper(host, username, privateKeyPath, bbrVersion string, hasDebug bool, maxInFlightThreads int, maxConnectionsPerMinute int, timeStamp string) *orchestrator.Backuper {
 	logger := BuildLogger(hasDebug)
 	deploymentManager := standalone.NewDeploymentManager(logger,
 		host,
@@ -20,6 +20,7 @@ func BuildDirectorBackuper(host, username, privateKeyPath, bbrVersion string, ha
 		privateKeyPath,
 		instance.NewJobFinderOmitMetadataReleases(bbrVersion, logger),
 		ssh.NewSshRemoteRunner,
+		maxConnectionsPerMinute,
 	)
 	execr := executor.NewParallelExecutor(maxInFlightThreads)
 

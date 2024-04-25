@@ -43,6 +43,7 @@ func (checkCommand DirectorBackupCommand) Action(c *cli.Context) error {
 		c.App.Version,
 		c.GlobalBool("debug"),
 		c.Parent().Int("max-in-flight-threads"),
+		c.Parent().Int("max-connections-per-minute"),
 		timeStamp)
 
 	backupErr := backuper.Backup(directorName, c.String("artifact-path"))

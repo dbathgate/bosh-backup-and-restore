@@ -30,7 +30,8 @@ func (d DeploymentRestoreCleanupCommand) Action(c *cli.Context) error {
 		c.Parent().String("ca-cert"),
 		c.App.Version,
 		c.Bool("with-manifest"),
-		c.GlobalBool("debug"))
+		c.GlobalBool("debug"),
+		c.Parent().Int("max-connections-per-minute"))
 
 	if err != nil {
 		return processError(orchestrator.NewError(err))

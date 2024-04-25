@@ -25,16 +25,18 @@ type BoshClient interface {
 func NewClient(boshDirector director.Director,
 	sshOptsGenerator ssh.SSHOptsGenerator,
 	remoteRunnerFactory ssh.RemoteRunnerFactory,
+	maxConnectionsPerMinute int,
 	logger Logger,
 	jobFinder instance.JobFinder,
 	manifestQuerierCreator instance.ManifestQuerierCreator) Client {
 	return Client{
-		Director:               boshDirector,
-		SSHOptsGenerator:       sshOptsGenerator,
-		RemoteRunnerFactory:    remoteRunnerFactory,
-		Logger:                 logger,
-		jobFinder:              jobFinder,
-		manifestQuerierCreator: manifestQuerierCreator,
+		Director:                boshDirector,
+		SSHOptsGenerator:        sshOptsGenerator,
+		RemoteRunnerFactory:     remoteRunnerFactory,
+		maxConnectionsPerMinute: maxConnectionsPerMinute,
+		Logger:                  logger,
+		jobFinder:               jobFinder,
+		manifestQuerierCreator:  manifestQuerierCreator,
 	}
 }
 
@@ -42,6 +44,7 @@ type Client struct {
 	director.Director
 	ssh.SSHOptsGenerator
 	ssh.RemoteRunnerFactory
+	maxConnectionsPerMinute int
 	Logger
 	jobFinder              instance.JobFinder
 	manifestQuerierCreator instance.ManifestQuerierCreator
@@ -112,7 +115,7 @@ func (c Client) FindInstances(deploymentName string) ([]orchestrator.Instance, e
 				return nil, errors.Wrap(err, "ssh.NewConnection.ParseAuthorizedKey failed")
 			}
 
-			remoteRunner, err := c.RemoteRunnerFactory(host.Host, host.Username, privateKey, gossh.FixedHostKey(hostPublicKey), supportedEncryptionAlgorithms(hostPublicKey), c.Logger)
+			remoteRunner, err := c.RemoteRunnerFactory(host.Host, host.Username, privateKey, gossh.FixedHostKey(hostPublicKey), supportedEncryptionAlgorithms(hostPublicKey), c.maxConnectionsPerMinute, c.Logger)
 			if err != nil {
 				cleanupAlreadyMadeConnections(deployment, slugs, sshOpts)
 				return nil, errors.Wrap(err, "failed to connect using ssh")

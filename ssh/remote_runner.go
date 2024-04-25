@@ -34,8 +34,8 @@ type SshRemoteRunner struct {
 	connection SSHConnection
 }
 
-func NewSshRemoteRunner(host, user, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, logger Logger) (RemoteRunner, error) {
-	connection, err := NewConnection(host, user, privateKey, publicKeyCallback, publicKeyAlgorithm, logger)
+func NewSshRemoteRunner(host, user, privateKey string, publicKeyCallback ssh.HostKeyCallback, publicKeyAlgorithm []string, maxConnectionsPerMinute int, logger Logger) (RemoteRunner, error) {
+	connection, err := NewConnection(host, user, privateKey, publicKeyCallback, publicKeyAlgorithm, maxConnectionsPerMinute, logger)
 	if err != nil {
 		return SshRemoteRunner{}, err
 	}

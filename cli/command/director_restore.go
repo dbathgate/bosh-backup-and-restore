@@ -45,6 +45,7 @@ func (cmd DirectorRestoreCommand) Action(c *cli.Context) error {
 		c.App.Version,
 		c.GlobalBool("debug"),
 		c.Parent().Int("max-in-flight-threads"),
+		c.Parent().Int("max-connections-per-minute"),
 	)
 
 	restoreErr := restorer.Restore(directorName, artifactPath)

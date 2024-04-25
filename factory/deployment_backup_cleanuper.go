@@ -15,10 +15,11 @@ func BuildDeploymentBackupCleanuper(
 	caCert string,
 	bbrVersion string,
 	maxInFlightThreads int,
+	maxConnectionsPerMinute int,
 	logger logger.Logger,
 ) (*orchestrator.BackupCleaner, error) {
 
-	boshClient, err := BuildBoshClient(target, username, password, caCert, bbrVersion, logger)
+	boshClient, err := BuildBoshClient(target, username, password, caCert, bbrVersion, maxConnectionsPerMinute, logger)
 
 	if err != nil {
 		return nil, err

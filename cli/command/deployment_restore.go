@@ -43,7 +43,8 @@ func (d DeploymentRestoreCommand) Action(c *cli.Context) error {
 		c.Parent().String("ca-cert"),
 		c.App.Version,
 		c.GlobalBool("debug"),
-		c.Parent().Int("max-in-flight-threads"))
+		c.Parent().Int("max-in-flight-threads"),
+		c.Parent().Int("max-connections-per-minute"))
 
 	if err != nil {
 		return processError(orchestrator.NewError(err))

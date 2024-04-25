@@ -13,11 +13,12 @@ import (
 
 type DeploymentManager struct {
 	orchestrator.Logger
-	hostName            string
-	username            string
-	privateKeyFile      string
-	jobFinder           instance.JobFinder
-	remoteRunnerFactory ssh.RemoteRunnerFactory
+	hostName                string
+	username                string
+	privateKeyFile          string
+	jobFinder               instance.JobFinder
+	remoteRunnerFactory     ssh.RemoteRunnerFactory
+	maxConnectionsPerMinute int
 }
 
 func NewDeploymentManager(
@@ -25,14 +26,16 @@ func NewDeploymentManager(
 	hostName, username, privateKey string,
 	jobFinder instance.JobFinder,
 	remoteRunnerFactory ssh.RemoteRunnerFactory,
+	maxConnectionsPerMinute int,
 ) DeploymentManager {
 	return DeploymentManager{
-		Logger:              logger,
-		hostName:            hostName,
-		username:            username,
-		privateKeyFile:      privateKey,
-		jobFinder:           jobFinder,
-		remoteRunnerFactory: remoteRunnerFactory,
+		Logger:                  logger,
+		hostName:                hostName,
+		username:                username,
+		privateKeyFile:          privateKey,
+		jobFinder:               jobFinder,
+		remoteRunnerFactory:     remoteRunnerFactory,
+		maxConnectionsPerMinute: maxConnectionsPerMinute,
 	}
 }
 
@@ -42,7 +45,7 @@ func (dm DeploymentManager) Find(deploymentName string) (orchestrator.Deployment
 		return nil, errors.Wrap(err, "failed reading private key")
 	}
 
-	remoteRunner, err := dm.remoteRunnerFactory(dm.hostName, dm.username, string(keyContents), gossh.InsecureIgnoreHostKey(), nil, dm.Logger)
+	remoteRunner, err := dm.remoteRunnerFactory(dm.hostName, dm.username, string(keyContents), gossh.InsecureIgnoreHostKey(), nil, dm.maxConnectionsPerMinute, dm.Logger)
 	if err != nil {
 		return nil, err
 	}

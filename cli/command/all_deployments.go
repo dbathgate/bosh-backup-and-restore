@@ -115,7 +115,7 @@ func contains(list []string, item string) bool {
 	return false
 }
 
-func getDeploymentParams(c *cli.Context) (string, string, string, string, string, bool, string, bool, int) {
+func getDeploymentParams(c *cli.Context) (string, string, string, string, string, bool, string, bool, int, int) {
 	username := c.Parent().String("username")
 	password := c.Parent().String("password")
 	target := c.Parent().String("target")
@@ -125,8 +125,9 @@ func getDeploymentParams(c *cli.Context) (string, string, string, string, string
 	deployment := c.Parent().String("deployment")
 	allDeployments := c.Parent().Bool("all-deployments")
 	maxInFlightThreads := c.Parent().Int("max-in-flight-threads")
+	maxConnectionsPerMinute := c.Parent().Int("max-connections-per-minute")
 
-	return username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads
+	return username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads, maxConnectionsPerMinute
 }
 
 type DeploymentExecutable struct {

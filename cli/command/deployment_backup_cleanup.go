@@ -29,7 +29,7 @@ func (d DeploymentBackupCleanupCommand) Cli() cli.Command {
 func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 	trapSigint(true)
 
-	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads := getDeploymentParams(c)
+	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads, maxConnectionsPerMinute := getDeploymentParams(c)
 
 	if !allDeployments {
 		logger := factory.BuildBoshLogger(debug)
@@ -41,6 +41,7 @@ func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 			caCert,
 			c.App.Version,
 			maxInFlightThreads,
+			maxConnectionsPerMinute,
 			logger,
 		)
 		if err != nil {
@@ -51,10 +52,10 @@ func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 		return processError(cleanupErr)
 	}
 
-	return cleanupAllDeployments(target, username, password, caCert, bbrVersion, debug, maxInFlightThreads)
+	return cleanupAllDeployments(target, username, password, caCert, bbrVersion, debug, maxInFlightThreads, maxConnectionsPerMinute)
 }
 
-func cleanupAllDeployments(target, username, password, caCert, bbrVersion string, debug bool, maxInFlightThreads int) error {
+func cleanupAllDeployments(target, username, password, caCert, bbrVersion string, debug bool, maxInFlightThreads int, maxConnectionsPerMinute int) error {
 	cleanupAction := func(deploymentName string) orchestrator.Error {
 		timestamp := time.Now().UTC().Format(artifactTimeStampFormat)
 		logFilePath, buffer, logger, logErr := createLogger(timestamp, "", deploymentName, debug)
@@ -69,6 +70,7 @@ func cleanupAllDeployments(target, username, password, caCert, bbrVersion string
 			caCert,
 			bbrVersion,
 			maxInFlightThreads,
+			maxConnectionsPerMinute,
 			logger,
 		)
 
@@ -95,7 +97,7 @@ func cleanupAllDeployments(target, username, password, caCert, bbrVersion string
 
 	logger, _ := factory.BuildBoshLoggerWithCustomBuffer(debug)
 
-	boshClient, err := factory.BuildBoshClient(target, username, password, caCert, bbrVersion, logger)
+	boshClient, err := factory.BuildBoshClient(target, username, password, caCert, bbrVersion, maxConnectionsPerMinute, logger)
 	if err != nil {
 		return err
 	}

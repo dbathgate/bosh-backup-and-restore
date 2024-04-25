@@ -14,7 +14,8 @@ func BuildDirectorBackupCleaner(host,
 	privateKeyPath,
 	bbrVersion string,
 	hasDebug bool,
-	maxInFlightThreads int) *orchestrator.BackupCleaner {
+	maxInFlightThreads int,
+	maxConnectionsPerMinute int) *orchestrator.BackupCleaner {
 
 	logger := BuildLogger(hasDebug)
 	deploymentManager := standalone.NewDeploymentManager(logger,
@@ -23,6 +24,7 @@ func BuildDirectorBackupCleaner(host,
 		privateKeyPath,
 		instance.NewJobFinderOmitMetadataReleases(bbrVersion, logger),
 		ssh.NewSshRemoteRunner,
+		maxConnectionsPerMinute,
 	)
 
 	return orchestrator.NewBackupCleaner(logger, deploymentManager, orderer.NewKahnBackupLockOrderer(), executor.NewParallelExecutor(maxInFlightThreads))
