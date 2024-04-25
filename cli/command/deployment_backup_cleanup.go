@@ -29,7 +29,7 @@ func (d DeploymentBackupCleanupCommand) Cli() cli.Command {
 func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 	trapSigint(true)
 
-	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments := getDeploymentParams(c)
+	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads := getDeploymentParams(c)
 
 	if !allDeployments {
 		logger := factory.BuildBoshLogger(debug)
@@ -40,6 +40,7 @@ func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 			password,
 			caCert,
 			c.App.Version,
+			maxInFlightThreads,
 			logger,
 		)
 		if err != nil {
@@ -50,10 +51,10 @@ func (d DeploymentBackupCleanupCommand) Action(c *cli.Context) error {
 		return processError(cleanupErr)
 	}
 
-	return cleanupAllDeployments(target, username, password, caCert, bbrVersion, debug)
+	return cleanupAllDeployments(target, username, password, caCert, bbrVersion, debug, maxInFlightThreads)
 }
 
-func cleanupAllDeployments(target, username, password, caCert, bbrVersion string, debug bool) error {
+func cleanupAllDeployments(target, username, password, caCert, bbrVersion string, debug bool, maxInFlightThreads int) error {
 	cleanupAction := func(deploymentName string) orchestrator.Error {
 		timestamp := time.Now().UTC().Format(artifactTimeStampFormat)
 		logFilePath, buffer, logger, logErr := createLogger(timestamp, "", deploymentName, debug)
@@ -67,6 +68,7 @@ func cleanupAllDeployments(target, username, password, caCert, bbrVersion string
 			password,
 			caCert,
 			bbrVersion,
+			maxInFlightThreads,
 			logger,
 		)
 
@@ -106,7 +108,7 @@ func cleanupAllDeployments(target, username, password, caCert, bbrVersion string
 		"could not be cleaned up",
 		"cleaned up",
 		errorHandler,
-		deployment.NewParallelExecutor())
+		deployment.NewParallelExecutor(maxInFlightThreads))
 }
 
 func cleanup(cleaner *orchestrator.BackupCleaner, deployment string) orchestrator.Error {

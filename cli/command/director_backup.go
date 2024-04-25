@@ -42,6 +42,7 @@ func (checkCommand DirectorBackupCommand) Action(c *cli.Context) error {
 		c.Parent().String("private-key-path"),
 		c.App.Version,
 		c.GlobalBool("debug"),
+		c.Parent().Int("max-in-flight-threads"),
 		timeStamp)
 
 	backupErr := backuper.Backup(directorName, c.String("artifact-path"))

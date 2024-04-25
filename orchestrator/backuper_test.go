@@ -54,7 +54,7 @@ var _ = Describe("Backup", func() {
 	})
 
 	JustBeforeEach(func() {
-		b = orchestrator.NewBackuper(fakeBackupManager, logger, deploymentManager, lockOrderer, executor.NewParallelExecutor(), nowFunc, artifactCopier, unsafeLockFree, timeStamp)
+		b = orchestrator.NewBackuper(fakeBackupManager, logger, deploymentManager, lockOrderer, executor.NewParallelExecutor(10), nowFunc, artifactCopier, unsafeLockFree, timeStamp)
 		actualBackupError = b.Backup(deploymentName, "")
 	})
 

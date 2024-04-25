@@ -9,11 +9,12 @@ import (
 )
 
 func BuildDeploymentBackupCleanuper(
-	target,
-	username,
-	password,
-	caCert,
+	target string,
+	username string,
+	password string,
+	caCert string,
 	bbrVersion string,
+	maxInFlightThreads int,
 	logger logger.Logger,
 ) (*orchestrator.BackupCleaner, error) {
 
@@ -27,6 +28,6 @@ func BuildDeploymentBackupCleanuper(
 		logger,
 		bosh.NewDeploymentManager(boshClient, logger, false),
 		orderer.NewKahnBackupLockOrderer(),
-		executor.NewParallelExecutor(),
+		executor.NewParallelExecutor(maxInFlightThreads),
 	), nil
 }

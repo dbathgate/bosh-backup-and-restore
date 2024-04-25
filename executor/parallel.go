@@ -1,8 +1,8 @@
 package executor
 
-func NewParallelExecutor() ParallelExecutor {
+func NewParallelExecutor(maxInFlight int) ParallelExecutor {
 	return ParallelExecutor{
-		maxInFlight: 10,
+		maxInFlight: maxInFlight,
 	}
 }
 

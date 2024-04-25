@@ -29,6 +29,7 @@ func (d DirectorBackupCleanupCommand) Action(c *cli.Context) error {
 		c.Parent().String("private-key-path"),
 		c.App.Version,
 		c.GlobalBool("debug"),
+		c.Parent().Int("max-in-flight-threads"),
 	)
 
 	cleanupErr := cleaner.Cleanup(directorName)

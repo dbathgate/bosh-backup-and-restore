@@ -143,6 +143,11 @@ func availableDeploymentFlags() []cli.Flag {
 			Name:  "all-deployments",
 			Usage: "Run command for all deployments. Omit if '--deployment' is provided. Currently only supported for: pre-backup-check, backup and backup-cleanup",
 		},
+		cli.IntFlag{
+			Name:  "max-in-flight-threads",
+			Usage: "Set the maximum amount of parallel threads",
+			Value: 10,
+		},
 	}
 }
 
@@ -166,6 +171,11 @@ func availableDirectorFlags() []cli.Flag {
 		cli.BoolFlag{
 			Name:  "debug",
 			Usage: "Enable debug logs",
+		},
+		cli.IntFlag{
+			Name:  "max-in-flight-threads",
+			Usage: "Set the maximum amount of parallel threads",
+			Value: 10,
 		},
 	}
 }

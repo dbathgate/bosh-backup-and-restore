@@ -19,6 +19,7 @@ func BuildDeploymentBackuper(
 	withManifest bool,
 	unsafeLockFree bool,
 	bbrVersion string,
+	maxInFlightThreads int,
 	logger boshlog.Logger,
 	timestamp string,
 ) (*orchestrator.Backuper, error) {
@@ -27,7 +28,7 @@ func BuildDeploymentBackuper(
 		return nil, err
 	}
 
-	execr := executor.NewParallelExecutor()
+	execr := executor.NewParallelExecutor(maxInFlightThreads)
 
 	return orchestrator.NewBackuper(
 		backup.BackupDirectoryManager{},

@@ -44,6 +44,7 @@ func (cmd DirectorRestoreCommand) Action(c *cli.Context) error {
 		c.Parent().String("private-key-path"),
 		c.App.Version,
 		c.GlobalBool("debug"),
+		c.Parent().Int("max-in-flight-threads"),
 	)
 
 	restoreErr := restorer.Restore(directorName, artifactPath)

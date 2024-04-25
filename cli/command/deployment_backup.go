@@ -45,7 +45,7 @@ func (d DeploymentBackupCommand) Cli() cli.Command {
 func (d DeploymentBackupCommand) Action(c *cli.Context) error {
 	trapSigint(true)
 
-	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments := getDeploymentParams(c)
+	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads := getDeploymentParams(c)
 	withManifest := c.Bool("with-manifest")
 	unsafeLockFree := c.Bool("unsafe-lock-free")
 	artifactPath := c.String("artifact-path")
@@ -54,13 +54,13 @@ func (d DeploymentBackupCommand) Action(c *cli.Context) error {
 		if unsafeLockFree {
 			return processError(orchestrator.NewError(fmt.Errorf("Cannot use the --unsafe-lock-free flag in conjunction with the --all-deployments flag")))
 		}
-		return backupAll(target, username, password, caCert, artifactPath, withManifest, bbrVersion, debug)
+		return backupAll(target, username, password, caCert, artifactPath, withManifest, bbrVersion, debug, maxInFlightThreads)
 	}
 
-	return backupSingleDeployment(deployment, target, username, password, caCert, artifactPath, withManifest, bbrVersion, unsafeLockFree, debug)
+	return backupSingleDeployment(deployment, target, username, password, caCert, artifactPath, withManifest, bbrVersion, unsafeLockFree, debug, maxInFlightThreads)
 }
 
-func backupAll(target, username, password, caCert, artifactPath string, withManifest bool, bbrVersion string, debug bool) error {
+func backupAll(target, username, password, caCert, artifactPath string, withManifest bool, bbrVersion string, debug bool, maxInFlightThreads int) error {
 	backupAction := func(deploymentName string) orchestrator.Error {
 		timestamp := time.Now().UTC().Format(artifactTimeStampFormat)
 		logFilePath, buffer, logger, logErr := createLogger(timestamp, artifactPath, deploymentName, debug)
@@ -76,6 +76,7 @@ func backupAll(target, username, password, caCert, artifactPath string, withMani
 			withManifest,
 			false,
 			bbrVersion,
+			maxInFlightThreads,
 			logger,
 			timestamp,
 		)
@@ -116,14 +117,14 @@ func backupAll(target, username, password, caCert, artifactPath string, withMani
 		"cannot be backed up",
 		"backed up",
 		errorHandler,
-		deployment.NewParallelExecutor())
+		deployment.NewParallelExecutor(maxInFlightThreads))
 }
 
-func backupSingleDeployment(deployment, target, username, password, caCert, artifactPath string, withManifest bool, bbrVersion string, unsafeLockFree, debug bool) error {
+func backupSingleDeployment(deployment, target, username, password, caCert, artifactPath string, withManifest bool, bbrVersion string, unsafeLockFree, debug bool, maxInFlightThreads int) error {
 	logger := factory.BuildBoshLogger(debug)
 	timeStamp := time.Now().UTC().Format(artifactTimeStampFormat)
 
-	backuper, err := factory.BuildDeploymentBackuper(target, username, password, caCert, withManifest, unsafeLockFree, bbrVersion, logger, timeStamp)
+	backuper, err := factory.BuildDeploymentBackuper(target, username, password, caCert, withManifest, unsafeLockFree, bbrVersion, maxInFlightThreads, logger, timeStamp)
 	if err != nil {
 		return processError(orchestrator.NewError(err))
 	}

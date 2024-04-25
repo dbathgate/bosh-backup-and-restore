@@ -85,5 +85,5 @@ var _ = Describe("Executor", func() {
 	}
 
 	ExecutorTests("SerialExecutor", NewSerialExecutor())
-	ExecutorTests("ParallelExecutor", NewParallelExecutor())
+	ExecutorTests("ParallelExecutor", NewParallelExecutor(10))
 })

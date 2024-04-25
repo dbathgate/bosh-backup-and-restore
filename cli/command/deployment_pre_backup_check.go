@@ -29,7 +29,7 @@ func (d DeploymentPreBackupCheck) Cli() cli.Command {
 }
 
 func (d DeploymentPreBackupCheck) Action(c *cli.Context) error {
-	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments := getDeploymentParams(c)
+	username, password, target, caCert, bbrVersion, debug, deployment, allDeployments, maxInFlightThreads := getDeploymentParams(c)
 	var logger logger.Logger
 	if allDeployments {
 		logger, _ = factory.BuildBoshLoggerWithCustomBuffer(debug)
@@ -44,7 +44,7 @@ func (d DeploymentPreBackupCheck) Action(c *cli.Context) error {
 	backupChecker := factory.BuildDeploymentBackupChecker(boshClient, logger, false)
 
 	if allDeployments {
-		errs := allDeploymentsBackupCheck(boshClient, backupChecker)
+		errs := allDeploymentsBackupCheck(boshClient, backupChecker, maxInFlightThreads)
 		if errs != nil {
 			return errs
 		}
@@ -74,7 +74,7 @@ func backupableCheck(backupChecker *orchestrator.BackupChecker, deploymentName s
 	return nil
 }
 
-func allDeploymentsBackupCheck(boshClient bosh.Client, backupChecker *orchestrator.BackupChecker) error {
+func allDeploymentsBackupCheck(boshClient bosh.Client, backupChecker *orchestrator.BackupChecker, maxInFlightThreads int) error {
 	backupCheckerAction := func(deploymentName string) orchestrator.Error {
 		return backupableCheck(backupChecker, deploymentName)
 	}
@@ -91,6 +91,6 @@ func allDeploymentsBackupCheck(boshClient bosh.Client, backupChecker *orchestrat
 		"cannot be backed up",
 		"can be backed up",
 		errorHandler,
-		deployment.NewParallelExecutor(),
+		deployment.NewParallelExecutor(maxInFlightThreads),
 	)
 }

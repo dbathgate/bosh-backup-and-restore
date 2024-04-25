@@ -1,16 +1,19 @@
 package deployment
 
-func NewParallelExecutor() ParallelExecutor {
-	return ParallelExecutor{}
+func NewParallelExecutor(maxInFlight int) ParallelExecutor {
+	return ParallelExecutor{
+		maxInFlight: maxInFlight,
+	}
 }
 
 type ParallelExecutor struct {
+	maxInFlight int
 }
 
 func (s ParallelExecutor) Run(executables []Executable) []DeploymentError {
 	var errors []DeploymentError
 
-	guard := make(chan bool, 10)
+	guard := make(chan bool, s.maxInFlight)
 	errs := make(chan DeploymentError, len(executables))
 
 	for _, executable := range executables {
